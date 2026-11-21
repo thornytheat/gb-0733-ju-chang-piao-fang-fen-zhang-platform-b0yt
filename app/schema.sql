@@ -15,3 +15,14 @@ CREATE TABLE IF NOT EXISTS run_inputs (
     PRIMARY KEY (run_id, source)
 );
 CREATE INDEX IF NOT EXISTS run_head ON runs(book, sequence DESC);
+CREATE TABLE IF NOT EXISTS settlements (
+    statement_id TEXT PRIMARY KEY,
+    book TEXT NOT NULL,
+    period TEXT NOT NULL,
+    venue TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    sequence INTEGER NOT NULL UNIQUE,
+    payload TEXT NOT NULL,
+    UNIQUE (book, period, venue)
+);
+CREATE INDEX IF NOT EXISTS settlement_book ON settlements(book, period);

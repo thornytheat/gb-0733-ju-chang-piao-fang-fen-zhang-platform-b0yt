@@ -13,6 +13,7 @@
 | M5 退款冲正 | 逐笔核对停演冲正、限额与超领原因 | `GET /api/refunds/{run_id}` | `app/modules/m5_refunds/rules.py` `app/modules/m5_refunds/service.py` | `tests/test_refunds.py` |
 | M6 场馆勾稽 | 对照双账并按票、场馆、源文件复核 | `GET /api/reconcile/{run_id}` | `app/modules/m6_reconcile/ledger.py` `app/modules/m6_reconcile/service.py` | `tests/test_reconcile.py` |
 | M7 结算凭证 | 查看原因码分布与源清单，下载可重算凭证 | `GET /api/evidence/{run_id}`、`GET /api/evidence/{run_id}/export` | `app/modules/m7_evidence/bundle.py` `app/modules/m7_evidence/csv_out.py` | `tests/test_evidence.py` |
+| M8 场馆结算 | 关账锁定档位分成，查看待调整并下载分期凭证 | `GET /api/settlement/{run_id}`、`POST /api/settlement/{run_id}/close`、`GET /api/settlement/{run_id}/export` | `app/modules/m8_settlement/rules.py` `app/modules/m8_settlement/service.py` `app/modules/m8_settlement/bundle.py` | `tests/test_settlement.py` |
 
 ## 陷阱登记
 
@@ -33,7 +34,12 @@
 | TRAP-15 | tickets.csv 元、分混用 | 收款多计百倍 | 单位转换后累计 | `app/contracts.py` | `tests/test_intake.py::test_mixed_money_formats_are_exact` |
 | TRAP-23 | scans.csv 含起点和关闭时刻 | 边界二次入账 | 半开核销窗 | `app/modules/m3_scans/service.py` | `tests/test_scans.py::test_window_start_is_inclusive_and_close_exclusive` |
 | TRAP-24 | tickets.csv 的 00107 拆给相同权重 | 三场取整后少分或多分 | 最大余数与场次键裁决 | `app/modules/m4_allocation/rules.py` | `tests/test_allocation.py::test_equal_remainders_use_stable_show_key_and_conserve` |
+| TRAP-27 | 关账后退款使场馆跌破档位，财务不再改已出结算单 | 重算当期覆盖原结算单，或把调整并入下期净票房 | 当期结算单锁定；差额作待调整转入下一未关账期且不参与档位计算；同源重跑不新增结算记录 | `app/modules/m8_settlement/service.py` `app/store.py` | `tests/test_settlement.py::test_refund_tier_drop_keeps_closed_statement_and_carries_difference` |
 | TRAP-26 | 以 refunds.csv 已发布样例为基准提交仅表头快照 | 原退款被旧表清除 | 校验已过账冲正都保留 | `app/modules/m5_refunds/service.py` | `tests/test_refunds.py::test_previous_approval_cannot_be_erased_by_stale_submission` |
+
+## 分成结算规则
+
+档位按每馆每期净票房（原分账 − 已入账退款）套档，费率以整数基点计算并向下取整。关账写入 `settlements` 表，同账册同期间场馆唯一，重复关账原样返回。关账后的重算差额只记为待调整，转入下一未关账期；调整行不并入净票房，避免二次改变档位。已关账结算单在源快照变化后仍保留原档位、原分成和关账批次。
 
 ## 对账规则
 

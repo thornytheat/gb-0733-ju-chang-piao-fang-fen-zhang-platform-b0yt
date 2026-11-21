@@ -1,0 +1,68 @@
+<section class="panel settlement" aria-labelledby="settlement-title" id="settlement">
+  <div class="panel__head settlement-head">
+    <div class="evidence-title"><h2 id="settlement-title">场馆结算</h2>
+      <span class="state {{ 'state--ok' if settlement.totals.closed_periods else 'state--warn' }}">
+        {% if settlement.totals.closed_periods %}已关账 {{ settlement.totals.closed_periods | join('、') }}{% else %}尚未关账{% endif %}
+      </span>
+    </div>
+    <div class="settlement-actions">
+      {% if not preview %}
+      {% if settlement.totals.current_period %}<button class="btn btn--primary" type="button" data-close-period="{{ settlement.totals.current_period }}">关账 {{ settlement.totals.current_period }}</button>{% else %}<span class="settlement-hint">全部结算期已关账</span>{% endif %}
+      <a class="btn" href="/api/settlement/{{ manifest.run_id }}/export{% if settlement.totals.voucher_period %}?period={{ settlement.totals.voucher_period }}{% endif %}" download>{{ settlement.totals.voucher_period or '本期' }}结算凭证 <span aria-hidden="true">↓</span></a>
+      {% else %}
+      <span class="settlement-hint">发布后可关账并下载凭证</span>
+      {% endif %}
+    </div>
+  </div>
+  <p class="settlement-policy">{{ settlement.decision }}</p>
+  <div class="settlement-scroll" tabindex="0" aria-label="场馆档位、已结分成与待调整金额">
+    <table class="ledger settlement-table">
+      <thead><tr>
+        <th scope="col">结算期</th><th scope="col">场馆</th><th scope="col">档位</th>
+        <th scope="col" class="num">净票房 ¥</th><th scope="col" class="num">应结 ¥</th>
+        <th scope="col" class="num">已结分成 ¥</th><th scope="col" class="num">本期结转 ¥</th>
+        <th scope="col" class="num">待调整 ¥</th>
+        <th scope="col">调整期</th><th scope="col">结算单</th>
+      </tr></thead>
+      <tbody>
+      {% for row in settlement.rows | sort(attribute='period', reverse=true) %}
+        <tr {% if row.tier_changed %}class="has-gap"{% endif %}>
+          <td>{{ row.period }}</td>
+          <th scope="row">{{ row.venue }}</th>
+          <td>
+            <span class="state {{ 'state--warn' if row.tier_changed else 'state--ok' }}">{{ row.tier_label }} · {{ row.rate_label }}</span>
+            {% if row.tier_changed %}<small class="tier-shift">关账时 {{ row.confirmed_tier_label }} · {{ row.confirmed_rate_label }}</small>{% endif %}
+          </td>
+          <td class="num" {% if row.status == 'closed' %}title="关账净票房 ¥{{ row.net_at_close_cents | money }}"{% endif %}>{{ row.net_cents | money }}</td>
+          <td class="num">{{ row.expected_share_cents | money }}</td>
+          <td class="num">{{ row.confirmed_share_cents | money if row.confirmed_share_cents is not none else '—' }}</td>
+          <td class="num">{{ row.settled_adjustment_cents | money if row.settled_adjustment_cents else '—' }}</td>
+          <td class="num {{ 'is-bad' if row.adjustment_cents < 0 else '' }}">{{ row.adjustment_cents | money if row.adjustment_cents else '—' }}</td>
+          <td>{{ row.adjustment_period or '—' }}</td>
+          <td><code title="{{ row.statement_id or '尚未关账' }}{% if row.closed_run_id %} · 关账批次 {{ row.closed_run_id }}{% endif %}">{{ row.statement_id[:11] if row.statement_id else '未关账' }}</code></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="10" class="empty">暂无场馆净票房。</td></tr>
+      {% endfor %}
+      </tbody>
+      <tfoot><tr>
+        <th scope="row" colspan="3">合计</th>
+        <td class="num">{{ settlement.totals.net_cents | money }}</td>
+        <td class="num">{{ settlement.totals.expected_share_cents | money }}</td>
+        <td class="num">{{ settlement.totals.confirmed_share_cents | money }}</td>
+        <td class="num">{{ settlement.totals.settled_adjustment_cents | money }}</td>
+        <td class="num">{{ settlement.totals.adjustment_cents | money }}</td>
+        <td colspan="2"></td>
+      </tr></tfoot>
+    </table>
+  </div>
+  <div class="ledger-notes">
+    <span>档位按该馆该期净票房 = 原分账 − 已入账退款 确定，比例见下方费率卡</span>
+    <span>待调整转入下一未关账期，不并入该期净票房{% if settlement.totals.incoming_cents %} · 下一期转入 <strong class="num">¥{{ settlement.totals.incoming_cents | money }}</strong>{% endif %}</span>
+  </div>
+  <div class="settlement-tiers" aria-label="档位费率卡">
+    {% for tier in settlement.tiers %}
+    <span><b>{{ tier.tier_label }}</b> 净票房 ≥ ¥{{ tier.threshold_cents | money }} · {{ tier.rate_label }}</span>
+    {% endfor %}
+  </div>
+</section>

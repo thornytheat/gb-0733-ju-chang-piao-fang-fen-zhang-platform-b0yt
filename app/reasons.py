@@ -48,4 +48,6 @@ REASONS = {
     'PUBLICATION_CHANGED': '票源、权益或原场次定义已发布，变化后须使用新账册',
     'REFUND_CHANGED': '本次输入遗漏或改写了已入账的冲正',
     'RECONCILE_FAILED': '勾稽未通过，批次未发布',
+    'PERIOD_INVALID': '结算期须为 YYYY-MM',
+    'PERIOD_EMPTY': '该期没有可关账的场馆净票房',
 }

@@ -10,6 +10,7 @@ from app.modules.m3_scans.service import admit
 from app.modules.m4_allocation.service import allocate
 from app.modules.m5_refunds.service import preserve_approved, reverse
 from app.modules.m6_reconcile.service import count_sources, reconcile
+from app.modules.m8_settlement.service import provisional
 from app.records import Isolations
 from app.sources import SourceSet
 
@@ -40,6 +41,7 @@ def compute(book, run_id, files, publication=None, head=None):
     accounts = reconcile(tickets, shows, scans, refunds, publication, counts)
     if not accounts['balanced']:
         raise Problem(409, 'RECONCILE_FAILED', accounts['checks'])
+    settlement = provisional(accounts['ledger'], shows)
     manifest = {
         'run_id': run_id, 'book': book, 'rule_version': RULE_VERSION, 'inputs': inputs,
         'publication_id': publication['publication_id'], 'origin_run': publication['origin_run'],
@@ -49,5 +51,6 @@ def compute(book, run_id, files, publication=None, head=None):
         'previous_run': head['manifest']['run_id'] if head else None,
     }
     return {'manifest': manifest, 'publication': publication, 'quarantine': quarantine, 'funding': accounts,
-            'tickets': list(tickets.values()), 'shows': list(shows.values()), 'rights': rights, 'scans': scans,
-            'refunds': refunds, 'reason_counts': dict(sorted(Counter(row['code'] for row in quarantine).items()))}
+            'settlement': settlement, 'tickets': list(tickets.values()), 'shows': list(shows.values()),
+            'rights': rights, 'scans': scans, 'refunds': refunds,
+            'reason_counts': dict(sorted(Counter(row['code'] for row in quarantine).items()))}

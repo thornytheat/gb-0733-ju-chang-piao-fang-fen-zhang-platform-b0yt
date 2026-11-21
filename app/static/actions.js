@@ -3,10 +3,10 @@ export function hookRunActions() {
   const form = document.querySelector('#import-form');
   const toolbarMessage = document.querySelector('#run-message');
   const importMessage = document.querySelector('#import-message');
-  const buttons = [...document.querySelectorAll('[data-run-action], #import-form button[type="submit"]')];
+  const buttons = [...document.querySelectorAll('[data-run-action], [data-close-period], #import-form button[type="submit"]')];
   let pending = false;
 
-  async function run(url, output, body) {
+  async function run(url, output, body, notices = {published: 'published', reused: 'reused'}) {
     if (pending) return;
     pending = true;
     buttons.forEach(button => { button.disabled = true; });
@@ -17,7 +17,7 @@ export function hookRunActions() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || '请核对文件和账册编号');
       const current = new URL(location.href);
-      current.search = new URLSearchParams({run: result.run_id, notice: result.reused ? 'reused' : 'published'});
+      current.search = new URLSearchParams({run: result.run_id, notice: notices[result.reused ? 'reused' : 'new']});
       location.assign(current);
     } catch (error) {
       output.classList.add('is-error');
@@ -31,6 +31,13 @@ export function hookRunActions() {
   document.querySelector('#upload-close').addEventListener('click', () => dialog.close());
   buttons.filter(button => button.dataset.runAction).forEach(button => {
     button.addEventListener('click', () => run(button.dataset.runAction, toolbarMessage));
+  });
+  buttons.filter(button => button.dataset.closePeriod).forEach(button => {
+    button.addEventListener('click', () => {
+      const body = new URLSearchParams({period: button.dataset.closePeriod});
+      run(`/api/settlement/${encodeURIComponent(document.body.dataset.run)}/close`, toolbarMessage, body,
+        {new: 'closed', reused: 'close-reused'});
+    });
   });
   form.addEventListener('submit', event => {
     event.preventDefault();

@@ -67,3 +67,18 @@ dialog::backdrop { background: #20103360; }
 .import-form output { color: var(--bad); overflow-wrap: anywhere; }
 .import-form .btn { justify-self: end; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.settlement { min-width: 0; scroll-margin-top: calc(var(--bar) + 14px); }
+.settlement-head { flex-wrap: wrap; }
+.settlement-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.settlement-hint { color: var(--ink-2); font-size: 11px; }
+.settlement-policy { padding: 8px var(--pad); color: var(--ink-2); font-size: 11px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
+.settlement-scroll { max-height: 300px; overflow: auto; }
+.settlement-table td, .settlement-table th { height: 30px; }
+.settlement-table tbody tr:hover { background: var(--panel-2); }
+.settlement-table tbody tr.has-gap > :first-child { border-left: 2px solid #c7a6ed; }
+.settlement-table tfoot :is(td, th) { font-weight: 700; border-bottom: 0; background: var(--panel-2); height: 34px; }
+.settlement-table .is-bad { color: var(--bad); }
+.settlement-table .empty { color: var(--ink-2); padding: 12px; text-align: center; }
+.settlement-tiers { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 7px var(--pad) 9px; color: var(--ink-2); font-size: 11px; border-top: 1px dashed var(--line-2); }
+.settlement-tiers b { color: var(--accent-ink); }
+.settlement-table .tier-shift { display: block; color: var(--warn); font-size: 10.5px; white-space: nowrap; }

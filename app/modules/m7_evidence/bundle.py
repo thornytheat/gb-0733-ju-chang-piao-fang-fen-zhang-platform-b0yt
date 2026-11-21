@@ -36,6 +36,9 @@ def evidence_tables(snapshot):
                                                    'net_cents', 'payable_cents', 'unsettled_cents', 'difference_cents')),
         'source-counts.csv': (accounts['sources'], ('source', 'encoding', 'status', 'rows', 'headers', 'blank',
                                                    'accepted', 'isolated', 'difference')),
+        'settlement-periods.csv': (snapshot.get('settlement', []), ('period', 'venue', 'net_cents', 'tier',
+                                                                   'tier_label', 'threshold_cents', 'rate_bp',
+                                                                   'rate_label', 'share_cents')),
         'quarantine.csv': (quarantine, ('key', 'code', 'reason', *ORIGIN, 'detail')),
     }
 

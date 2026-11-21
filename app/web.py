@@ -7,12 +7,14 @@ from fastapi.templating import Jinja2Templates
 
 from app.browse import snapshot_for
 from app.config import REPORT_ZONE, ROOT
+from app.modules.m8_settlement.bundle import statements_for
+from app.modules.m8_settlement.service import report
 
 router = APIRouter()
 templates = Jinja2Templates(directory=ROOT / 'app' / 'templates')
 MODULES = (
     ('intake', '票源导入'), ('rights', '套票权益'), ('scans', '入场核销'), ('allocation', '权重分账'),
-    ('refunds', '退款冲正'), ('reconcile', '场馆勾稽'), ('evidence', '结算凭证'),
+    ('refunds', '退款冲正'), ('reconcile', '场馆勾稽'), ('settlement', '场馆结算'), ('evidence', '结算凭证'),
 )
 
 
@@ -33,5 +35,7 @@ def home(request: Request, run: str = '', notice: str = ''):
     return templates.TemplateResponse(request, 'index.html', {
         'snapshot': snapshot, 'manifest': manifest, 'funding': snapshot['funding'],
         'preview': manifest['run_id'] == 'sample', 'modules': MODULES, 'local_time': local_time.strftime('%m-%d %H:%M:%S'),
-        'notice': {'published': '批次已发布', 'reused': '已复用原批次'}.get(notice, ''),
+        'settlement': report(snapshot, statements_for(request.app.state.store, snapshot)),
+        'notice': {'published': '批次已发布', 'reused': '已复用原批次',
+                   'closed': '本期已关账', 'close-reused': '本期此前已关账，未新增结算记录'}.get(notice, ''),
     })
